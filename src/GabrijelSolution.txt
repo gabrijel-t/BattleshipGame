@@ -1,0 +1,403 @@
+import java.util.Scanner;
+
+//BattleShip solution from hyperskill.org java project
+//Code implemented and modified from User 72316826
+
+//Code that worked through stage 4 but not 5.
+
+public class Main {
+
+    public static void main(String[]args){
+
+        System.out.println("Player 1, place your ships on the game field\n");
+        String [][] gamefield= startGamefield();
+        String [][] opponent = startGamefield();
+        printGamefield(gamefield);
+        enterCoordinates(gamefield);
+        //pressEnter();
+        System.out.println("Player 2, place your ships on the game field\n");
+        printGamefield(opponent);
+        enterCoordinates(opponent);
+        String [][] fogGamefield= startGamefield();
+        String [][] fogEnemy = startGamefield();
+        while(cellsHit<37) {
+            //shootAShot(gamefield, fogGamefield);
+            playRealGame(gamefield, opponent, fogGamefield, fogEnemy);
+        }
+        System.out.println("You sank the last ship. You won. Congratulations!");
+    }
+
+
+    public static String[][] startGamefield(){
+        String [][] gamefield =new String [11][11];
+
+        for(int row =0; row< gamefield.length; row++){
+            for(int col =0; col< gamefield.length; col++){
+                if(row ==0 && col ==0){
+                    gamefield[row][col] = " ";
+                }else if(row == 0 && col != 0){
+                    gamefield[row][col] = String.valueOf(col);
+                }else if(row !=0 && col ==0){
+                    gamefield[row][col] = String.valueOf((char) ('A' +row-1));
+                }else{
+                    gamefield[row][col]="~";
+                }
+            }
+        }
+        return gamefield;
+    }
+
+
+    public static void printGamefield(String [][] g){
+        System.out.println();
+        for(int i =0; i< g.length; i++){
+            for(int j = 0; j<g.length; j++){
+                System.out.print(g[i][j]+" ");
+            }
+            System.out.println("");
+        }
+        System.out.println("");
+    }
+
+
+    static String [] ships = {"Aircraft Carrier", "Battleship", "Submarine", "Cruiser", "Destroyer"};
+    static int [] cells = {5,4,3,3,2};
+    static int turn =0;
+
+    static String [] shipsEnemy = {"Aircraft Carrier", "Battleship", "Submarine", "Cruiser", "Destroyer"};
+    static int [] cellsEnemy = {5,4,3,3,2};
+    static int turnEnemy =0;
+
+
+    public static void enterCoordinates(String[][] gameField){
+        Scanner scan = new Scanner(System.in);
+        String coord1 ="";
+        String coord2 ="";
+
+        while(turn<5) {
+            String out = "Enter the coordinates of " + ships[turn] + " (" + cells[turn] + " cells)";
+            System.out.println(out);
+            coord1 = scan.next();
+            coord2 = scan.next();
+            System.out.println();
+            //place ships
+            placeShips(gameField, coord1, coord2, cells[turn]);
+            printGamefield(gameField);
+            turn++;
+        }
+    }
+
+
+    public static String[][] placeShips(String[][] gameField, String coord1, String coord2, int cell){
+        String [][] temporary = gameField;
+        Scanner scan = new Scanner(System.in);
+
+        int row1 = (int) coord1.charAt(0)-'@';
+
+        //Using the following statement did not work;
+        //int col1 = coord1.charAt(1);
+        //It didn't work because the value of col1 would be the ascii value of the number in coord1.charAt(1)
+
+        int col1 = Integer.parseInt(coord1.substring(1)); //this works
+
+        int row2 = (int) coord2.charAt(0)-'@';
+        int col2 = Integer.parseInt(coord2.substring(1));
+
+        //part of the final method that validates the input
+        while(!validateInput(temporary, row1, col1, row2, col2, cell)){
+            coord1 = scan.next();
+            coord2 = scan.next();
+
+            row1 = (int) coord1.charAt(0)-'@';
+            col1 = Integer.parseInt(coord1.substring(1));
+
+            row2 = (int) coord2.charAt(0)-'@';
+            col2 = Integer.parseInt(coord2.substring(1));
+        }
+
+        for(int i = Math.min(row1, row2); i<= Math.max(row1, row2); i++){
+            for(int j = Math.min(col1, col2); j <= Math.max(col1, col2); j++){
+                temporary[i][j]= "O";
+            }
+        }
+
+        printGamefield(gameField);
+        //printGamefield(temporary);
+        return  temporary;
+    }
+
+
+    public static boolean validateInput(String[][] gamefield, int row1, int col1, int row2, int col2, int cell){
+        boolean valid = false;
+        boolean tooClose = false;
+
+        String lengthError = "Error! Wrong length! Try again!";
+        String locationError = "Error! Wrong location! Try again!";
+        String closeError= "Error! Your ship is too close to another one. Try again!";
+
+        if(row1 == row2){
+            if(Math.abs(col1 - col2)+1 == cell){
+                valid = true;
+            }else{
+                System.out.println(lengthError);
+            }
+        }else if(col1 == col2){
+            if(Math.abs(row1 - row2)+1 == cell){
+                valid = true;
+            }else{
+                System.out.println(lengthError);
+            }
+        }else if(row1 != row2 && col1 != col2){
+            System.out.println(locationError);
+        }else if(row1 == 0 || row2 == 0 || col1 == 0 || col2 == 0){
+            System.out.println("Error! Coordinates can't include 0");
+        }
+
+        //The following validating algorithm is programmed for a 10x10 grid, it needs to be modified for other values
+
+        for(int i = Math.min(row1, row2); i<= Math.max(row1, row2) && !tooClose; i++){
+            for(int j = Math.min(col1, col2); j <= Math.max(col1, col2) && !tooClose; j++){
+                if(!"~".equals(gamefield[i][j])){
+                    tooClose= true;
+                    System.out.println("Error! There is another ship on this coordinates! Try again! ");
+                }else{
+                    if(i ==1){
+                        //Check the first row
+                        if(j == 1){
+                            //Checks the top left corner
+                            if("O".equals(gamefield[i+1][j]) || "O".equals(gamefield[i][j+1])){
+                                tooClose= true;
+                                System.out.println(closeError);
+                            }
+                        }else if(j == 10){
+                            //Checks the top right corner
+                            if("O".equals(gamefield[i+1][j]) || "O".equals(gamefield[i][j-1])){
+                                tooClose = true;
+                                System.out.println(closeError);
+                            }
+                        }else{
+                            //Checks the other columns in the first row (it checks if the coordinates near the given cell are free)
+                            if("O".equals(gamefield[i+1][j]) || "O".equals(gamefield[i][j-1]) || "O".equals(gamefield[i][j+1])){
+                                tooClose= true;
+                                System.out.println(closeError);
+                            }
+                        }
+                    }else if(i == 10){
+                        //Checks the last row
+                        if(j == 1){
+                            //Checks the bottom left corner
+                            if("O".equals(gamefield[i-1][j]) || "O".equals(gamefield[i][j+1])){
+                                tooClose = true;
+                                System.out.println(closeError);
+                            }
+                        }else if(j == 10){
+                            //Checks the bottom right corner
+                            if("O".equals(gamefield[i-1][j]) || "O".equals(gamefield[i][j-1])){
+                                tooClose = true;
+                                System.out.println(closeError);
+                            }
+                        }else{
+                            //Checks the middle colums of the last row
+                            if("O".equals(gamefield[i-1][j]) || "O".equals(gamefield[i][j-1]) || "O".equals(gamefield[i][j+1])){
+                                tooClose = true;
+                                System.out.println(closeError);
+                            }
+                        }
+                    }else{
+                        //Checks the inner cells of the box
+                        //Same principle as for the previous steps
+                        if(j == 1){
+                            if("O".equals(gamefield[i-1][j]) || "O".equals(gamefield[i+1][j]) || "O".equals(gamefield[i][j+1])){
+                                tooClose = true;
+                                System.out.println(closeError);
+                            }
+                        }else if(j == 10){
+                            if("O".equals(gamefield[i-1][j]) || "O".equals(gamefield[i+1][j]) || "O".equals(gamefield[i][j-1])){
+                                tooClose =true;
+                                System.out.println(closeError);
+                            }
+                        }else{
+                            if("O".equals(gamefield[i-1][j]) || "O".equals(gamefield[i+1][j]) || "O".equals(gamefield[i][j-1]) || "O".equals(gamefield[i][j+1])){
+                                tooClose = true;
+                                System.out.println(closeError);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if(tooClose){
+            valid = false;
+        }
+        return valid;
+    }
+
+
+    //Can be improved   - refactored
+    public static void shootAShot(String[][] gamefield, String[][] fog){
+        System.out.println("The game starts!");
+        printGamefield(fog);
+        Scanner scan = new Scanner(System.in);
+        System.out.println("Take a shot!");
+        String shot = scan.next();
+        int row = (int) shot.charAt(0) - '@';
+        int col = Integer.parseInt(shot.substring(1));
+
+        while(row < 1 || row > 10 || col <1 || col > 10){
+            System.out.println("Error! You entered the wrong coordinates! Try again: \n");
+            shot = scan.next();
+            row = (int) shot.charAt(0) - '@';
+            col = Integer.parseInt(shot.substring(1));
+
+        }
+        fog = fogOfWar(gamefield, fog, row, col);
+        String hit = "You hit a ship!";
+        String miss = "You missed!";
+        if(gamefield[row][col].equals("O")){
+            gamefield[row][col]= "X";
+            printGamefield(fog);
+            System.out.println(hit);
+            //printGamefield(gamefield);
+        }else if(gamefield[row][col].equals("~")){
+            gamefield[row][col] = "M";
+            printGamefield(fog);
+            System.out.println(miss);
+            //printGamefield(gamefield);
+        }
+    }
+
+
+    public static String[][] fogOfWar(String[][] gamefield, String[][]fog, int row, int col){
+        if(gamefield[row][col].equals("O")){
+            fog[row][col] = "X";
+            isHit(gamefield, fog, row, col);
+        }else if(gamefield[row][col].equals("~")){
+            fog[row][col] = "M";
+        }else{
+            System.out.println("Something went wrong");
+        }
+        return fog;
+    }
+
+    static int cellsHit=0;
+    static int opponentCellsHit=0;
+
+
+    public static void isHit(String[][] gamefield, String[][]fog, int row, int col){
+        if(fog[row][col].equals(("X"))){
+            cellsHit++;
+            System.out.println("You hit a ship!");
+            boolean shipSunk = false;
+            if(row == 1 && col == 1){
+                if(gamefield[row+1][col].equals("O") || gamefield[row][col+1].equals("O")){
+                    shipSunk = false;
+                }
+            }else if(row == 1 && col == 10){
+                if(gamefield[row+1][col].equals("O") || gamefield[row][col-1].equals("O")){
+                    shipSunk = false;
+                }
+            }else if(row== 10 && col ==1){
+                if(gamefield[row-1][col].equals("O") || gamefield[row][col+1].equals("O")){
+                    shipSunk = false;
+                }
+            }else if(row ==10 && col == 10){
+                if(gamefield[row-1][col].equals("O") || gamefield[row][col-1].equals("O")){
+                    shipSunk = false;
+                }
+            }else if(row == 1){
+                if(gamefield[row][col+1].equals("O") || gamefield[row][col-1].equals("O") || gamefield[row+1][col].equals("O")){
+                    shipSunk = false;
+                }
+            }else if(row ==10){
+                if(gamefield[row][col+1].equals("O") || gamefield[row][col-1].equals("O") || gamefield[row-1][col].equals("O")){
+                    shipSunk= false;
+                }
+            }else if(col == 1){
+                if(gamefield[row+1][col].equals("O") || gamefield[row-1][col].equals("O") || gamefield[row][col+1].equals("O")){
+                    shipSunk = false;
+                }
+            }else if(col ==10){
+                if(gamefield[row+1][col].equals("O") || gamefield[row-1][col].equals("O") || gamefield[row][col-1].equals("O")){
+                    shipSunk= false;
+                }
+            }else if(gamefield[row][col+1].equals("O") || gamefield[row][col-1].equals("O") || gamefield[row+1][col].equals("O") || gamefield[row-1][col].equals("O")){
+                shipSunk= false;
+            }else{
+                shipSunk = true;
+            }
+
+            if(shipSunk){
+                System.out.println("You sank a ship");
+            }
+        }else{
+            System.out.println("You missed");
+        }
+    }
+
+
+    public static void pressEnter(){
+        System.out.println("Press Enter and pass the move to another player");
+        Scanner scan = new Scanner(System.in);
+        try{
+            scan.next();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    static boolean win1 = false;
+    static boolean win2 = false;
+
+    public static void printFields(String[][]gamefield, String[][] foggy){
+        System.out.println();
+        for(int i =0; i< foggy.length; i++){
+            for(int j = 0; j<foggy.length; j++){
+                System.out.print(foggy[i][j]+" ");
+            }
+            System.out.println("");
+        }
+        System.out.println("---------------------");
+        for(int i =0; i< gamefield.length; i++){
+            for(int j = 0; j<gamefield.length; j++){
+                System.out.print(gamefield[i][j]+" ");
+            }
+            System.out.println("");
+        }
+    }
+
+    public static void playRealGame(String[][] player1, String [][] opponent, String[][] fog, String [][] foggy){
+        int counter = 1;
+        while(!win1 || !win2){
+
+            if(counter %2 ==0){
+                //The opponent plays
+                printFields(opponent, foggy);
+                System.out.println("Player 2, it's your turn: ");
+                //Shoot the shot and check what happened: miss, sink, win,...
+                shootAShot(opponent, foggy);
+
+                if(opponentCellsHit== 17){
+                    win2 = true;
+                }
+            }else{
+                //I play
+                printFields(player1, fog);
+                System.out.println("Player 1, it's your turn: ");
+                shootAShot(player1, fog);
+                if(cellsHit== 17){
+                    win1 = true;
+                }
+            }
+            pressEnter();
+            counter++;
+        }
+        if(win1){
+            System.out.println("Congratulation you won!");
+        }else if(win2){
+            System.out.println("Congratulation player 2 won");
+        }else{
+            System.out.println("Something went wrong in the process...");
+        }
+    }
+}

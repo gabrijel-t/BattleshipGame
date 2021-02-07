@@ -1,0 +1,195 @@
+package battleship;
+import java.util.Scanner;
+
+public class Main {
+
+   public static void main(String[] args) {
+		String coord1;
+		String coord2;
+		Scanner scanner = new Scanner(System.in);
+
+		// Creating game field
+		String[][] gameField = createGameField();
+		printGameField(gameField);
+
+		// Prompt to place ships
+		System.out.println("Enter the coordinates of the Aircraft Carrier (5 cells):\n");
+		coord1 = scanner.next();
+		coord2 = scanner.next();
+		System.out.println();
+		gameField = placeShips(gameField, coord1, coord2, 5, scanner);
+
+		System.out.println("Enter the coordinates of the Battleship (4 cells):\n");
+		coord1 = scanner.next();
+		coord2 = scanner.next();
+		System.out.println();
+		gameField = placeShips(gameField, coord1, coord2, 4, scanner);
+
+		System.out.println("Enter the coordinates of the Submarine (3 cells):\n");
+		coord1 = scanner.next();
+		coord2 = scanner.next();
+		System.out.println();
+		gameField = placeShips(gameField, coord1, coord2, 3, scanner);
+
+		System.out.println("Enter the coordinates of the Cruiser (3 cells):\n");
+		coord1 = scanner.next();
+		coord2 = scanner.next();
+		System.out.println();
+		gameField = placeShips(gameField, coord1, coord2, 3, scanner);
+
+		System.out.println("Enter the coordinates of the Destroyer (2 cells):\n");
+		coord1 = scanner.next();
+		coord2 = scanner.next();
+		System.out.println();
+		gameField = placeShips(gameField, coord1, coord2, 2, scanner);
+	}
+
+	// creates gameField
+	private static String[][] createGameField() {
+		String[][] gameField = new String[11][11];
+
+		for (int i = 0; i < gameField.length; i++) {
+			for (int j = 0; j < gameField.length; j++) {
+				if (i == 0 && j != 0) {
+					gameField[i][j] = String.valueOf(j);
+				} else if (i != 0 && j == 0) {
+					gameField[i][j] = String.valueOf((char) ('A' + i - 1));
+				} else if (i == 0 && j == 0) {
+					gameField[i][j] = " ";
+				} else {
+					gameField[i][j] = "~";
+				}
+			}
+		}
+		return gameField;
+	}
+
+	// prints the last turn of the game
+	private static void printGameField(String[][] gameField) {
+		for (int i = 0; i < gameField.length; i++) {
+			for (int j = 0; j < gameField.length; j++) {
+				System.out.print(gameField[i][j] + " ");
+				if (j == 10) {
+					System.out.println();
+				}
+			}
+		}
+		System.out.println();
+	}
+
+	// place players ships
+	private static String[][] placeShips(String[][] gameField, String coord1, String coord2, int cellNumber,
+			Scanner scanner) {
+		String[][] tempGameField = gameField;
+		int row1 = (int) (coord1.substring(0, 1).charAt(0) - '@');
+		int col1 = Integer.parseInt(coord1.substring(1, coord1.length()));
+		int row2 = (int) (coord2.substring(0, 1).charAt(0) - '@');
+		int col2 = Integer.parseInt(coord2.substring(1, coord2.length()));
+
+		while (!validateMove(tempGameField, row1, col1, row2, col2, cellNumber)) {
+			coord1 = scanner.next();
+			coord2 = scanner.next();
+			System.out.println();
+			row1 = (int) (coord1.substring(0, 1).charAt(0) - '@');
+			col1 = Integer.parseInt(coord1.substring(1, coord1.length()));
+			row2 = (int) (coord2.substring(0, 1).charAt(0) - '@');
+			col2 = Integer.parseInt(coord2.substring(1, coord2.length()));
+		}
+
+		for (int i = Math.min(row1, row2); i <= Math.max(row1, row2); i++) {
+			for (int j = Math.min(col1, col2); j <= Math.max(col1, col2); j++) {
+				tempGameField[i][j] = "O";
+			}
+		}
+
+		printGameField(gameField);
+
+		return tempGameField;
+	}
+
+	private static boolean validateMove(String[][] gameField, int row1, int col1, int row2, int col2, int cellNumber) {
+		boolean valid = false;
+		boolean tooClose = false;
+
+		if (row1 == row2) {
+			if (Math.abs(col2 - col1) + 1 == cellNumber) {
+				valid = true;
+			} else {
+				System.out.println("Error! Wrong length! Try again:\n");
+			}
+
+		} else if (col1 == col2) {
+			if (Math.abs(row2 - row1) + 1 == cellNumber) {
+				valid = true;
+			} else {
+				System.out.println("Error! Wrong length! Try again:\n");
+			}
+		} else if (row1 != row2 && col1 != col2) {
+			System.out.println("Error! Wrong ship location! Try again:\\n");
+		} else if (row1 == 0 || row2 == 0 || col1 == 0 || col2 == 0) {
+			System.out.println("Error! Out of playable field! Try again:\n");
+		}
+
+
+		for (int i = Math.min(row1, row2); i <= Math.max(row1, row2) && !tooClose; i++) {
+			for (int j = Math.min(col1, col2); j <= Math.max(col1, col2) && !tooClose; j++) {
+				if (!"~".equals(gameField[i][j])) {
+					tooClose = true;
+					System.out.println("Error! There is another ship in selected coordinates. " + "Try again:\n");
+				} else {
+					if (i == 1) {
+						if (j == 1) { if("O".equals(gameField[i + 1][j]) || "O".equals(gameField[i][j + 1])) {
+							tooClose = true;
+							System.out.println("Error! You placed it too close to another one. Try again:\n");}
+						} else if (j == 10) { if("O".equals(gameField[i + 1][j]) || "O".equals(gameField[i][j - 1])) {
+							tooClose = true;
+							System.out.println("Error! You placed it too close to another one. Try again:\n");}
+						} else {
+							if ("O".equals(gameField[i + 1][j]) || "O".equals(gameField[i][j - 1])
+									|| "O".equals(gameField[i][j + 1])) {
+								tooClose = true;
+								System.out.println("Error! You placed it too close to another one. Try again:\n");
+							}
+						}
+					} else if (i == 10) {
+						if (j == 1) {if("O".equals(gameField[i - 1][j]) || "O".equals(gameField[i][j + 1])) {
+							tooClose = true;
+							System.out.println("Error! You placed it too close to another one. Try again:\n");}
+						} else if (j == 10) { if("O".equals(gameField[i - 1][j]) || "O".equals(gameField[i][j - 1])) {
+							tooClose = true;
+							System.out.println("Error! You placed it too close to another one. Try again:\n");}
+						} else {
+							if ("O".equals(gameField[i - 1][j]) || "O".equals(gameField[i][j - 1])
+									|| "O".equals(gameField[i][j + 1])) {
+								tooClose = true;
+								System.out.println("Error! You placed it too close to another one. Try again:\n");
+							}
+						}
+
+					} else {
+						if (j == 1) { if("O".equals(gameField[i + 1][j]) || "O".equals(gameField[i][j + 1])
+								|| "O".equals(gameField[i - 1][j])) {
+							tooClose = true;
+							System.out.println("Error! You placed it too close to another one. Try again:\n");}
+						} else if (j == 10) { if("O".equals(gameField[i + 1][j]) || "O".equals(gameField[i][j - 1])
+								|| "O".equals(gameField[i - 1][j])) {
+							tooClose = true;
+							System.out.println("Error! You placed it too close to another one. Try again:\n");}
+						} else {
+							if ("O".equals(gameField[i + 1][j]) || "O".equals(gameField[i][j - 1])
+									|| "O".equals(gameField[i][j + 1]) || "O".equals(gameField[i - 1][j])) {
+								tooClose = true;
+								System.out.println("Error! You placed it too close to another one. Try again:\n");
+							}
+						}
+					}
+				}
+			}
+		}
+		if (tooClose) {
+			valid = false;
+		}
+
+		return valid;
+	}
+}
